@@ -167,9 +167,11 @@ def clean_phrase(phrase, needs_decode=True):
     if needs_decode:
         phrase = phrase.decode('ascii', errors='ignore')
     cleaned = str(phrase.replace('\r\r', '\n').replace('\r', '').replace('||', '|'))
+    cleaned = str(phrase.replace('\\r', '\\n'))
     cleaned = re.sub(r'\n+', '\n', cleaned)
     cleaned = re.sub(r' +', ' ', cleaned)
     cleaned = re.sub(r'\t', ' ', cleaned)
+    cleaned = cleaned.strip('\r\n')
     return str(cleaned.strip())
 
 def process_rpdr_file_unannotated(filename):
@@ -258,7 +260,10 @@ def _write_csv_output(note_phrase_matches, note_key, output_fname):
     df = pd.DataFrame(dict_list)
     df['MATCHES'] = df['MATCHES'].astype('object')
     df.index = np.arange(0, df.shape[0])
+    df = clean_df(df, [RPDR_NOTE_KEYWORD], False)
     df.to_csv(output_fname)
+    writer = pd.ExcelWriter(output_fname[:-4] + '.xlsx')
+    df.to_excel(writer,'Sheet1')
 
 
 def run_regex(input_filename, phrases, output_filename='output.csv', is_rpdr=True, note_keyword=RPDR_NOTE_KEYWORD, patient_keyword=RPDR_PATIENT_KEYWORD, extract_numerical_value=False, 
@@ -285,6 +290,6 @@ def run_regex(input_filename, phrases, output_filename='output.csv', is_rpdr=Tru
     note_phrase_matches = _extract_values_from_notes(note_dicts, phrase_type, phrases, note_keyword, ignore_punctuation)
     _write_csv_output(note_phrase_matches, note_keyword, output_filename)
 
-run_regex('../data/test/test_deidentified.txt','patient', '../data/test/output.csv')
+#run_regex('../data/test/test_deidentified.txt','patient', '../data/test/output.csv')
 
 
